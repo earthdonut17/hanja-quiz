@@ -180,3 +180,17 @@ body { background: linear-gradient(160deg, #f4f1e6 0%, #e3efe9 100%); }
 .hanja-detail .book-tag { display: inline-block; font-size: 0.72rem; font-weight: 700; color: #1c5cab; background: #eef4fc; border-radius: 10px; padding: 1px 8px; margin: 4px 4px 0 0; }
 .hanja-cell .book-dot { position: absolute; left: 4px; top: 2px; font-size: 0.6rem; }
 .hanja-note { margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); }
+
+/* ---------- 급수 마스터 호칭과 단계 ---------- */
+.dash-names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dash-title { font-size: 0.9rem; font-weight: 800; color: #6b5b95; }
+.scope-chip.title { border-color: #c9a227; background: #fff6d6; color: #7a5b00; }
+.scope-chip.current { border-color: var(--primary); background: #e6f1ec; color: var(--primary-dark); }
+.scope-chip.locked { opacity: 0.55; border-style: dashed; cursor: default; background: #f3f3f0; }
+.ladder-note { margin: 10px 0 0; font-size: 0.82rem; line-height: 1.5; color: var(--text); word-break: keep-all; }
+.ladder-toggle { margin-top: 4px; padding: 0; font-size: 0.8rem; color: var(--muted); }
+.title-banner { margin: 0; padding: 14px 16px; border-radius: 16px; text-align: center; font-weight: 800; line-height: 1.5; background: #fff6d6; color: #7a5b00; border: 2px solid #c9a227; word-break: keep-all; }
+.title-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--viz-grid, #e1e0d9); font-size: 0.9rem; }
+.title-row:last-child { border-bottom: none; }
+.title-name { font-weight: 800; }
+.title-meta { color: var(--muted); font-weight: 600; font-size: 0.82rem; text-align: right; }

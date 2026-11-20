@@ -5,13 +5,14 @@ const { newCard, recordAnswer, isDue, dueDate, isWeekend, isMastered, INTERVAL_D
 const { buildQuestion, checkAnswer, shuffle, typesFor, hasType, QUESTION_TYPES, BASIC_TYPES, CORE_TYPES, CIRCLED, TYPES } = A.quiz;
 
 const FREE_PRACTICE_SIZE = 10;
-const NEW_PER_DAY = 12;
-const MIN_NEW_PER_SESSION = 5;
-const MAX_SESSION_SIZE = 25;
+// 오늘의 학습 구성 규칙(하루 새 문제 수, 한 번에 푸는 수 등)은 planner.js에 있다
+const { NEW_PER_DAY, MIN_NEW_PER_SESSION, MAX_SESSION_SIZE } = A.planner;
 const DEFAULT_SCOPE = ["8", "7"];
 const EMOJIS = ["🐶", "🐱", "🐰", "🐻", "🦊", "🐼", "🦁", "🐸", "🐵", "🐯", "🦄", "🐧"];
-// 통계 표에는 한자와 상관없는 "생활 예절"을 넣지 않는다
-const STAT_TYPES = QUESTION_TYPES.filter((t) => t !== "moral");
+// 오늘의 학습(복습 일정)은 핵심 유형만 다룬다. 나머지 유형은 자유 연습과 모의고사에서 나오고, 복습 일정에는 넣지 않는다.
+const { studyTypesFor, MASTER_LEVEL } = A.progression;
+const STUDY_TYPES = new Set(CORE_TYPES);
+const STAT_TYPES = CORE_TYPES;
 
 const el = (id) => document.getElementById(id);
 const gradeLabel = (g) => (GRADE_INFO[g] ? GRADE_INFO[g].label : `${g}급`);
@@ -31,8 +32,10 @@ let state = {
   user: null,
   progress: {},
   stats: {},
-  scope: DEFAULT_SCOPE, // 공부하기로 고른 급수
-  words: [], // 고른 급수의 한자
+  scope: DEFAULT_SCOPE, // 사용자가 고른 급수 (단계별 해금을 켜면 교재 한자 선택에만 쓴다)
+  progression: { enabled: true, titles: {} }, // 급수 마스터 호칭과 단계별 해금 설정
+  grades: [], // 지금 공부하는 급수
+  words: [], // 지금 공부하는 한자
   session: [],
   sessionItems: [],
   screen: "users",
@@ -139,119 +142,123 @@ function selectUser(userId) {
   state.user = user;
   state.progress = store.getProgress(userId);
   state.stats = store.getStats(userId);
+  state.progression = store.getProgression(userId);
   const saved = store.getScope(userId);
   const valid = saved ? saved.filter((g) => GRADE_ORDER.includes(g)) : [];
-  applyScope(valid.length ? valid : DEFAULT_SCOPE);
+  state.scope = GRADE_ORDER.filter((g) => (valid.length ? valid : DEFAULT_SCOPE).includes(g));
+  checkTitles(); // 이미 마스터한 급수가 있으면 호칭을 준다
+  refreshWords();
   renderDashboard();
   showScreen("dashboard");
 }
 
-function applyScope(scope) {
-  state.scope = GRADE_ORDER.filter((g) => scope.includes(g));
-  state.words = HANJA.filter((h) => state.scope.includes(h.grade));
+// 공부할 급수: 단계별 해금을 켜면 지금 열려 있는 급수(+고르면 교재 한자), 끄면 직접 고른 급수
+function studyGrades() {
+  if (!state.progression.enabled) return state.scope;
+  const open = A.progression.unlockedGrades(state.progression.titles);
+  return state.scope.includes("x") ? [...open, "x"] : open;
 }
 
-// ---------- 공부할 범위 선택 ----------
+function refreshWords() {
+  const grades = studyGrades();
+  state.grades = GRADE_ORDER.filter((g) => grades.includes(g));
+  state.words = HANJA.filter((h) => state.grades.includes(h.grade));
+}
+
+// 새로 마스터한 급수에 호칭을 주고, 이번에 새로 받은 급수 목록을 돌려준다(해금이 바뀌면 공부 범위도 갱신)
+function checkTitles() {
+  const earned = A.progression.awardTitles(state.progression.titles, state.progress, store.todayStr());
+  if (earned.length) {
+    store.saveProgression(state.user.id, state.progression);
+    refreshWords();
+  }
+  return earned;
+}
+
+// ---------- 공부할 범위 · 급수 마스터 단계 ----------
 
 function renderScopeChips() {
   const box = el("scope-chips");
   box.innerHTML = "";
+  const { enabled, titles } = state.progression;
+  const open = new Set(A.progression.unlockedGrades(titles));
   GRADE_ORDER.forEach((g) => {
     const count = HANJA.filter((h) => h.grade === g).length;
     const chip = document.createElement("button");
-    chip.className = "scope-chip" + (state.scope.includes(g) ? " on" : "");
-    chip.innerHTML = `${gradeLabel(g)} <small>${count}자</small>`;
+    chip.className = "scope-chip";
+    if (g === "x" || !enabled) {
+      chip.classList.toggle("on", state.scope.includes(g));
+      chip.innerHTML = `${gradeLabel(g)} <small>${count}자</small>`;
+    } else if (titles[g]) {
+      chip.className = "scope-chip on title";
+      chip.innerHTML = `🏅 ${gradeLabel(g)} 마스터`;
+    } else if (open.has(g)) {
+      const { done, total } = A.progression.gradeStatus(g, state.progress);
+      chip.className = "scope-chip on current";
+      chip.innerHTML = `${gradeLabel(g)} <small>${done}/${total}</small>`;
+    } else {
+      chip.className = "scope-chip locked";
+      chip.innerHTML = `🔒 ${gradeLabel(g)}`;
+      chip.disabled = true;
+    }
     chip.addEventListener("click", () => toggleGrade(g));
     box.appendChild(chip);
   });
+
+  const note = el("ladder-note");
+  if (!enabled) {
+    note.textContent = "단계별 해금이 꺼져 있어요. 공부할 급수를 직접 골라요.";
+  } else {
+    const current = GRADE_ORDER.filter((g) => g !== "x" && open.has(g) && !titles[g])[0];
+    if (!current) {
+      note.textContent = "🎉 8급부터 5급까지 모두 마스터했어요!";
+    } else {
+      const { done, total } = A.progression.gradeStatus(current, state.progress);
+      const next = A.EXAM_GRADES[A.EXAM_GRADES.indexOf(current) + 1];
+      note.textContent =
+        `🎯 ${gradeLabel(current)} 한자 ${total}자가 모두 복습 레벨 ${MASTER_LEVEL} 이상이 되면 ${gradeLabel(current)} 마스터! (지금 ${done}/${total}자)` +
+        (next ? ` 마스터하면 ${gradeLabel(next)} 한자가 열려요.` : "");
+    }
+  }
+  el("btn-toggle-progression").textContent = enabled ? "단계별 해금 끄기" : "단계별 해금 켜기";
 }
 
 function toggleGrade(g) {
+  if (state.progression.enabled && g !== "x") return; // 열린 급수는 자동으로 공부 범위에 들어간다
   const next = state.scope.includes(g) ? state.scope.filter((x) => x !== g) : [...state.scope, g];
-  if (!next.length) return; // 최소 한 가지는 골라야 한다
-  applyScope(next);
+  if (!state.progression.enabled && !next.length) return; // 직접 고르는 모드에서는 최소 한 가지는 골라야 한다
+  state.scope = GRADE_ORDER.filter((x) => next.includes(x));
   store.saveScope(state.user.id, state.scope);
+  refreshWords();
+  renderDashboard();
+}
+
+function toggleProgression() {
+  const turningOff = state.progression.enabled;
+  if (turningOff) {
+    if (!confirm("단계별 해금을 끌까요?\n지금 열려 있는 급수를 그대로 공부 범위로 두고, 앞으로는 급수를 직접 고를 수 있어요.")) return;
+    state.scope = [...state.grades]; // 끄는 순간 공부 범위가 바뀌지 않게 지금 범위를 그대로 둔다
+    store.saveScope(state.user.id, state.scope);
+  }
+  state.progression.enabled = !turningOff;
+  store.saveProgression(state.user.id, state.progression);
+  refreshWords();
   renderDashboard();
 }
 
 // ---------- 대시보드 ----------
 
-// (한자, 문제유형) 쌍 하나하나를 독립된 카드로 보고, 한 번이라도 푼 적 있는 카드 중
-// 복습 기한이 된 것만 모은다. 아직 안 푼 유형은 아래 computeNewCandidates()가 맡는다.
-function computeDueItems() {
-  const items = [];
-  state.words.forEach((w) => {
-    const rec = state.progress[w.id];
-    if (!rec) return;
-    typesFor(w).forEach((type) => {
-      const card = rec[type];
-      if (card && isDue(card)) items.push({ word: w, type, next: dueDate(card), level: card.level });
-    });
-  });
-  return items;
-}
-
-// 아직 한 번도 안 푼 (한자, 문제유형) 쌍의 후보를 두 갈래로 나눈다.
-// - fresh: 처음 보는 한자. 기본 두 유형(훈음 고르기·한자 고르기) 중 하나를 첫 문제로 낸다.
-// - expand: 이미 배운 한자의 아직 안 푼 유형. 오늘 이미 푼 한자는 빼서 다음 날부터 나오게 한다.
-//   기본 유형이 아닌 유형은 그 한자를 기본 유형에서 한 번이라도 맞힌 뒤에만 낸다.
-function computeNewCandidates() {
-  const today = store.todayStr();
-  const fresh = [];
-  const expand = [];
-  state.words.forEach((w) => {
-    const rec = state.progress[w.id];
-    if (!rec) {
-      fresh.push({ word: w, type: BASIC_TYPES[Math.floor(Math.random() * BASIC_TYPES.length)] });
-      return;
-    }
-    if (Object.values(rec).some((card) => card && card.lastSeen === today)) return;
-    const knowsWord = BASIC_TYPES.some((t) => (rec[t]?.correct || 0) > 0);
-    const types = knowsWord ? typesFor(w) : BASIC_TYPES;
-    types.forEach((type) => {
-      if (!rec[type]) expand.push({ word: w, type });
-    });
-  });
-  return { fresh: shuffle(fresh), expand: shuffle(expand) };
-}
-
-// 신규 자리의 절반(홀수면 하나 더)은 새 한자, 나머지 절반은 배운 한자의 다른 유형으로 채운다.
-// 한쪽 후보가 모자라면 다른 쪽으로 채운다.
-function splitNewSlots(total, freshAvail, expandAvail) {
-  const expand = Math.min(expandAvail, Math.max(total - Math.ceil(total / 2), total - freshAvail));
-  const fresh = Math.min(freshAvail, total - expand);
-  return { fresh, expand };
-}
-
-const sortReviews = (dueItems) =>
-  shuffle(dueItems).sort((a, b) => (a.next < b.next ? -1 : a.next > b.next ? 1 : a.level - b.level));
-
-// 오늘의 학습 한 세션의 구성. 신규 자리는 하루 한도 안에서 복습이 적으면 많이, 복습이 많아도 최소 개수.
-// 복습은 신규를 뺀 자리만큼만 가장 오래 밀린 것부터 넣는다. 새 문제는 그날 첫 학습에만 넣고,
-// 그 뒤의 학습은 남은 복습만 푼다. 주말에는 밀린 복습이 있을 때만 학습할 수 있다.
-// 같은 세션에서 한 한자가 복습과 다른 유형으로 두 번 나오지 않도록, 복습에 들어간 한자는
-// "다른 유형" 후보에서 뺀다. 대시보드의 숫자도 이 함수로 계산해 실제 세션과 맞춘다.
-function planStudySession() {
-  const due = sortReviews(computeDueItems());
-  const newAlreadyGiven = state.stats.newWordsToday > 0;
-  if (isWeekend(store.todayStr()) && due.length === 0) return { dueCount: 0, reviews: [], newItems: [] };
-  if (newAlreadyGiven) return { dueCount: due.length, reviews: due.slice(0, MAX_SESSION_SIZE), newItems: [] };
-  const budget = Math.min(NEW_PER_DAY, Math.max(MIN_NEW_PER_SESSION, NEW_PER_DAY - due.length));
-  const { fresh, expand } = computeNewCandidates();
-
-  const firstTotal = Math.min(budget, fresh.length + expand.length);
-  const reviewWordIds = new Set(due.slice(0, MAX_SESSION_SIZE - firstTotal).map((it) => it.word.id));
-  const expandOk = expand.filter((it) => !reviewWordIds.has(it.word.id));
-
-  const newTotal = Math.min(budget, fresh.length + expandOk.length);
-  const split = splitNewSlots(newTotal, fresh.length, expandOk.length);
-  const newItems = [...fresh.slice(0, split.fresh), ...expandOk.slice(0, split.expand)];
-  return { dueCount: due.length, reviews: due.slice(0, MAX_SESSION_SIZE - newItems.length), newItems };
-}
-
-function pickReviews(dueItems, newCount) {
-  return sortReviews(dueItems).slice(0, Math.max(0, MAX_SESSION_SIZE - newCount));
-}
+// 오늘의 학습 구성은 planner.js가 정한다. 화면의 값(공부할 범위, 진도, 오늘 낸 새 문제 수)만 넘겨 준다.
+const planCtx = () => ({
+  words: state.words,
+  progress: state.progress,
+  newWordsToday: state.stats.newWordsToday,
+  today: store.todayStr(),
+  typesFor: studyTypesFor, // 오늘의 학습은 핵심 유형만
+});
+const computeDueItems = () => A.planner.computeDueItems(planCtx());
+const planStudySession = () => A.planner.planStudySession(planCtx());
+const pickReviews = (dueItems, newCount) => A.planner.pickReviews(planCtx(), dueItems, newCount);
 
 // "완전히 외운 한자": 그 한자에 나오는 핵심 유형이 모두 최고 레벨
 function isWordMastered(wordId) {
@@ -265,6 +272,8 @@ function isWordMastered(wordId) {
 function renderDashboard() {
   el("dash-avatar").textContent = state.user.avatar;
   el("dash-name").textContent = `${state.user.name}님`;
+  const top = A.progression.highestTitle(state.progression.titles);
+  el("dash-title").textContent = top ? `🏅 ${gradeLabel(top)} 마스터` : `🌱 ${gradeLabel(A.EXAM_GRADES[0])} 마스터에 도전 중`;
   renderScopeChips();
 
   const learned = state.words.filter((w) => state.progress[w.id]).length;
@@ -361,7 +370,7 @@ function renderHanjaList() {
   hint.textContent = "아래에서 한자를 눌러 보세요";
   detail.appendChild(hint);
 
-  GRADE_ORDER.filter((g) => state.scope.includes(g)).forEach((g) => {
+  state.grades.forEach((g) => {
     const group = document.createElement("div");
     group.className = "hanja-group";
     const title = document.createElement("h3");
@@ -418,19 +427,36 @@ function renderStats() {
   el("stats-accuracy").textContent = accuracy;
   el("stats-longest-streak").textContent = `${state.stats.longestStreak || 0}🔥`;
 
+  renderTitleStats();
   A.statsView.render({
     todayStr: store.todayStr(),
     words: state.words,
     progress: state.progress,
     stats: state.stats,
     types: STAT_TYPES,
-    typesForId: (id) => (wordsById.has(id) ? typesFor(wordsById.get(id)) : BASIC_TYPES),
-    hasType,
+    typesForId: (id) => (wordsById.has(id) ? studyTypesFor(wordsById.get(id)) : BASIC_TYPES),
+    hasType: (w, t) => studyTypesFor(w).includes(t),
     maxLevel: INTERVAL_DAYS.length - 1,
     dailyCap: MAX_SESSION_SIZE,
     dueDate,
     isMastered,
     gradeLabel,
+  });
+}
+
+// 통계 화면의 "급수 마스터" 기록
+function renderTitleStats() {
+  const box = el("stats-titles");
+  box.innerHTML = "";
+  const { titles } = state.progression;
+  A.EXAM_GRADES.forEach((g) => {
+    const { done, total } = A.progression.gradeStatus(g, state.progress);
+    const row = makeEl("div", "title-row");
+    row.append(
+      makeEl("span", "title-name", titles[g] ? `🏅 ${gradeLabel(g)} 마스터` : `${gradeLabel(g)}`),
+      makeEl("span", "title-meta", titles[g] ? `${titles[g]} 달성` : `레벨 ${MASTER_LEVEL} 이상 ${done}/${total}자`)
+    );
+    box.appendChild(row);
   });
 }
 
@@ -554,6 +580,7 @@ function finishExam() {
   for (let i = 0; i < total; i++) recordDailyActivity(state.stats);
   store.saveStats(state.user.id, state.stats);
 
+  el("title-banner").classList.add("hidden");
   el("result-title").textContent = "모의고사 결과 📝";
   const sub = el("result-sub");
   sub.classList.remove("hidden");
@@ -721,15 +748,18 @@ function handleAnswer(question, value, sourceEl) {
 
   const correct = checkAnswer(question, value);
 
-  // 한자와 상관없는 생활 예절 문제(word가 없음)는 복습 기록에 넣지 않는다.
+  // 한자와 상관없는 생활 예절 문제(word가 없음)는 기록에 넣지 않는다.
   if (!state.reviewMode && question.word) {
     const wordId = question.word.id;
     const type = question.type;
-    const rec = state.progress[wordId] || {};
-    const card = rec[type] || newCard();
-    rec[type] = recordAnswer(card, correct);
-    state.progress[wordId] = rec;
-    store.saveProgress(state.user.id, state.progress);
+    // 복습 일정(카드)은 오늘의 학습 유형(핵심 유형)만 관리한다. 다른 유형은 연습으로만 센다.
+    if (STUDY_TYPES.has(type)) {
+      const rec = state.progress[wordId] || {};
+      const card = rec[type] || newCard();
+      rec[type] = recordAnswer(card, correct);
+      state.progress[wordId] = rec;
+      store.saveProgress(state.user.id, state.progress);
+    }
 
     state.stats.totalAnswered = (state.stats.totalAnswered || 0) + 1;
     if (correct) state.stats.totalCorrect = (state.stats.totalCorrect || 0) + 1;
@@ -824,6 +854,21 @@ function finishSession() {
     list.appendChild(item);
   });
   el("btn-review-wrong").classList.toggle("hidden", !(state.stats.wrongToday || []).length);
+
+  // 급수를 마스터했는지 확인하고, 새로 호칭을 받았으면 축하한다
+  const earned = checkTitles();
+  const banner = el("title-banner");
+  banner.classList.toggle("hidden", !earned.length);
+  if (earned.length) {
+    const open = A.progression.unlockedGrades(state.progression.titles);
+    const newest = open[open.length - 1];
+    const tail = !state.progression.enabled
+      ? ""
+      : state.progression.titles[newest]
+      ? " 8급부터 5급까지 모두 마스터했어요! 🎉"
+      : ` 이제 ${gradeLabel(newest)} 한자가 함께 나와요.`;
+    banner.textContent = `🏅 ${earned.map(gradeLabel).join("·")} 마스터가 되었어요!${tail}`;
+  }
 
   const remaining = computeDueItems().length;
   const moreBtn = el("btn-more-review");
@@ -952,6 +997,7 @@ function init() {
     if (file) importRecords(file);
   });
 
+  el("btn-toggle-progression").addEventListener("click", toggleProgression);
   el("btn-start-study").addEventListener("click", () => startSession("study"));
   el("btn-free-practice").addEventListener("click", () => startSession("free"));
   el("btn-more-review").addEventListener("click", () => startSession("review"));

@@ -28,6 +28,7 @@ window.HanjaApp = window.HanjaApp || {};
   const progressKey = (id) => `hanja_app_progress_${id}`;
   const statsKey = (id) => `hanja_app_stats_${id}`;
   const scopeKey = (id) => `hanja_app_scope_${id}`;
+  const progressionKey = (id) => `hanja_app_progression_${id}`;
 
   function getUsers() {
     return readJSON(USERS_KEY, []);
@@ -43,7 +44,7 @@ window.HanjaApp = window.HanjaApp || {};
 
   function deleteUser(userId) {
     writeJSON(USERS_KEY, getUsers().filter((u) => u.id !== userId));
-    [progressKey, statsKey, scopeKey].forEach((k) => localStorage.removeItem(k(userId)));
+    [progressKey, statsKey, scopeKey, progressionKey].forEach((k) => localStorage.removeItem(k(userId)));
   }
 
   // 진도는 한자 하나마다, 문제 유형별로 따로 기록한다: progress[한자][유형] = 카드
@@ -64,6 +65,20 @@ window.HanjaApp = window.HanjaApp || {};
 
   function saveScope(userId, scope) {
     writeJSON(scopeKey(userId), scope);
+  }
+
+  // 급수 마스터 호칭과 단계별 해금 설정. titles: {급수: 호칭을 받은 날짜}, enabled: 단계별 해금 사용 여부(기본 켬)
+  function getProgression(userId) {
+    const data = readJSON(progressionKey(userId), null);
+    const titles = {};
+    if (isPlainObject(data?.titles)) {
+      Object.entries(data.titles).forEach(([g, date]) => typeof date === "string" && (titles[g] = date));
+    }
+    return { enabled: data?.enabled !== false, titles };
+  }
+
+  function saveProgression(userId, progression) {
+    writeJSON(progressionKey(userId), progression);
   }
 
   function getStats(userId) {
@@ -166,6 +181,7 @@ window.HanjaApp = window.HanjaApp || {};
         progress: readJSON(progressKey(u.id), {}),
         stats: readJSON(statsKey(u.id), null),
         scope: readJSON(scopeKey(u.id), null),
+        progression: readJSON(progressionKey(u.id), null),
       })),
     };
   }
@@ -186,7 +202,8 @@ window.HanjaApp = window.HanjaApp || {};
         typeof u.name === "string" &&
         (u.progress === undefined || isPlainObject(u.progress)) &&
         (u.stats === undefined || u.stats === null || isPlainObject(u.stats)) &&
-        (u.scope === undefined || u.scope === null || Array.isArray(u.scope))
+        (u.scope === undefined || u.scope === null || Array.isArray(u.scope)) &&
+        (u.progression === undefined || u.progression === null || isPlainObject(u.progression))
     );
     if (!valid) throw new Error("기록 파일 내용이 손상되었어요.");
 
@@ -201,6 +218,8 @@ window.HanjaApp = window.HanjaApp || {};
       else localStorage.removeItem(statsKey(u.id));
       if (u.scope) writeJSON(scopeKey(u.id), u.scope.map(String));
       else localStorage.removeItem(scopeKey(u.id));
+      if (u.progression) writeJSON(progressionKey(u.id), u.progression);
+      else localStorage.removeItem(progressionKey(u.id));
     });
     writeJSON(USERS_KEY, users);
     return data.users.length;
@@ -217,6 +236,8 @@ window.HanjaApp = window.HanjaApp || {};
     saveProgress,
     getScope,
     saveScope,
+    getProgression,
+    saveProgression,
     getStats,
     saveStats,
     recordStudyDay,
