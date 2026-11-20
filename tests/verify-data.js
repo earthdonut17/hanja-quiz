@@ -129,10 +129,6 @@ A.IDIOMS.forEach(([h, r, m, owner]) => {
   if (![...h].includes(owner)) fail(`사자성어 ${h}: 대표 한자 ${owner}가 없음`);
   [...h].forEach((c) => !byId.has(c) && fail(`사자성어 ${h}: ${c}가 목록에 없음`));
 });
-A.MORAL.forEach((q, i) => {
-  if (q.w.length !== 3) fail(`인성 문제 ${i + 1}: 오답은 3개여야 함`);
-  if (new Set([q.a, ...q.w]).size !== 4) fail(`인성 문제 ${i + 1}: 보기가 겹침`);
-});
 
 // 7) 교재 한자: 같은 한자의 훈음이 책마다 다른 경우를 알려 준다
 const bookHun = new Map();

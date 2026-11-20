@@ -749,8 +749,8 @@ function handleAnswer(question, value, sourceEl) {
   const correct = checkAnswer(question, value);
   A.sound.play(correct ? "correct" : "wrong");
 
-  // 한자와 상관없는 생활 예절 문제(word가 없음)는 기록에 넣지 않는다.
-  if (!state.reviewMode && question.word) {
+  // 복습 모드(오늘 틀린 문제 다시 풀기)가 아닐 때만 결과를 기록한다.
+  if (!state.reviewMode) {
     const wordId = question.word.id;
     const type = question.type;
     // 복습 일정(카드)은 오늘의 학습 유형(핵심 유형)만 관리한다. 다른 유형은 연습으로만 센다.
@@ -782,7 +782,7 @@ function handleAnswer(question, value, sourceEl) {
     state.result.correct++;
   } else {
     state.result.wrong++;
-    if (question.word) state.result.wrongWords.push(question.word);
+    state.result.wrongWords.push(question.word);
   }
 
   const grid = sourceEl.parentElement;

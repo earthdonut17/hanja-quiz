@@ -36,6 +36,7 @@ function checkQuestion(q, where) {
   if (!vals.includes(q.answer)) fail(`${where} ${q.type}: 정답 ${q.answer}가 보기에 없음`);
   if (!q.label || !q.stem || !q.stem.length) fail(`${where} ${q.type}: 지시문/본문 없음`);
   if (!q.explain) fail(`${where} ${q.type}: 해설 없음`);
+  if (!q.word) fail(`${where} ${q.type}: 한자와 연결되지 않은 문제(모든 문제는 한자 문제여야 함)`);
   // 유형별 추가 검사
   if (q.type === "word_write" || q.type === "sentence_write") {
     // 정답 한자어는 보기 중 하나뿐이고, 같은 독음의 실제 낱말이 오답으로 들어가면 안 된다
@@ -110,7 +111,6 @@ for (const h of HANJA) {
   if (!q) fail(`${h.hanja}: buildQuestion이 문제를 만들지 못함`);
   else checkQuestion(q, `[buildQuestion] ${h.hanja}`);
 }
-for (let i = 0; i < 40; i++) checkQuestion(quiz.buildMoral(), "[moral]");
 
 // 3) 모의고사
 if (A.mock) {

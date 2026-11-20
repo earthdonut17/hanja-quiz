@@ -22,19 +22,19 @@ window.HanjaApp = window.HanjaApp || {};
       ["meaning_choice", 10], ["hanja_choice", 10],
       ["category_pick", 1], ["sentence_reading", 1], ["sentence_hun", 1], ["wrong_word", 1], ["stroke_count", 1], ["antonym_char", 1],
       ["word_reading", 5], ["word_meaning", 3], ["word_write", 4], ["sentence_reading", 6], ["sentence_write", 2],
-      ["antonym_word", 1], ["category_pick", 1], ["idiom_meaning", 1], ["moral", 1],
+      ["antonym_word", 1], ["category_pick", 1], ["idiom_meaning", 1], ["word_meaning", 1],
     ],
     "5p": [
       ["meaning_choice", 10], ["hanja_choice", 10],
       ["wrong_word", 1], ["sentence_reading", 1], ["sentence_hun", 1], ["stroke_count", 1], ["synonym_char", 1], ["antonym_char", 1],
       ["word_reading", 5], ["word_meaning", 3], ["word_write", 4], ["sentence_reading", 6], ["sentence_write", 2],
-      ["antonym_word", 1], ["category_pick", 1], ["idiom_meaning", 1], ["moral", 1],
+      ["antonym_word", 1], ["category_pick", 1], ["idiom_meaning", 1], ["word_meaning", 1],
     ],
     "5": [
       ["meaning_choice", 8], ["hanja_choice", 7],
       ["category_pick", 1], ["sentence_hun", 2], ["stroke_count", 1], ["synonym_char", 1], ["antonym_char", 1], ["common_char", 1],
       ["word_reading", 9], ["word_meaning", 3], ["word_write", 3], ["sentence_reading", 4], ["sentence_write", 3],
-      ["antonym_word", 2], ["idiom_meaning", 2], ["category_pick", 1], ["moral", 1],
+      ["antonym_word", 2], ["idiom_meaning", 2], ["category_pick", 1], ["word_meaning", 1],
     ],
   };
 
@@ -55,11 +55,9 @@ window.HanjaApp = window.HanjaApp || {};
   function build(grade) {
     const pool = A.poolForGrade(grade);
     const usage = new Map(); // 같은 한자가 시험에 너무 자주 나오지 않게 센다
-    const usedMoral = new Set();
     const questions = [];
 
     const make = (type) => {
-      if (type === "moral") return quiz.buildMoral(usedMoral);
       const candidates = quiz
         .shuffle(pool.filter((h) => quiz.hasType(h, type)))
         .sort((a, b) => (usage.get(a.id) || 0) - (usage.get(b.id) || 0));

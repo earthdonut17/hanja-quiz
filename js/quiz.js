@@ -30,7 +30,6 @@ window.HanjaApp = window.HanjaApp || {};
     stroke_count: { label: "한자의 총획이 바르지 않은 것을 고르세요.", short: "총획" },
     idiom_meaning: { label: "사자성어의 뜻으로 알맞은 것을 고르세요.", short: "사자성어" },
     common_char: { label: "□ 안에 공통으로 들어갈 한자를 고르세요.", short: "공통 한자" },
-    moral: { label: "생활 속 바른 행동을 고르세요.", short: "생활 예절" },
   };
   const QUESTION_TYPES = Object.keys(TYPES);
   // 처음 보는 한자에게 먼저 내는 기본 유형, 그리고 "외웠다"의 기준이 되는 핵심 유형
@@ -78,7 +77,6 @@ window.HanjaApp = window.HanjaApp || {};
     stroke_count: (h) => !!h.strokes && h.grade !== "x",
     idiom_meaning: (h) => h.idioms.length > 0,
     common_char: (h) => h.words.length >= 3,
-    moral: () => false, // 한자와 상관없는 문제라 모의고사에서만 쓴다
   };
   const typesFor = (h) => QUESTION_TYPES.filter((t) => AVAILABLE[t](h));
   const hasType = (h, t) => AVAILABLE[t](h);
@@ -453,23 +451,6 @@ window.HanjaApp = window.HanjaApp || {};
     },
   };
 
-  // 생활 예절 문제는 한자와 상관없이 시험 마지막 문항에 나온다. used로 이미 낸 문제를 피한다.
-  function buildMoral(used = new Set()) {
-    const pool = A.MORAL.map((m, i) => ({ m, i })).filter(({ i }) => !used.has(i));
-    const { m, i } = pickOne(pool.length ? pool : A.MORAL.map((mm, ii) => ({ m: mm, i: ii })));
-    used.add(i);
-    return {
-      type: "moral",
-      word: null,
-      label: m.neg ? "바르지 않은 것을 고르세요." : "알맞은 것을 고르세요.",
-      stem: [{ k: "text", t: m.q, small: true }],
-      options: textOptions([m.a, ...m.w]),
-      answer: m.a,
-      optionClass: "option-long",
-      explain: m.a,
-    };
-  }
-
   // forceType이 이 한자에 맞지 않거나 문제를 만들지 못하면 다른 유형을 차례로 시도한다.
   // 그래서 돌려주는 문제의 type이 요청한 유형과 다를 수 있다(기록은 실제 낸 유형으로 남는다).
   function buildQuestion(h, pool, forceType) {
@@ -493,7 +474,6 @@ window.HanjaApp = window.HanjaApp || {};
     shuffle,
     pickOne,
     buildQuestion,
-    buildMoral,
     BUILDERS,
     checkAnswer,
     typesFor,
