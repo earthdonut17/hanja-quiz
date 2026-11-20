@@ -4,6 +4,8 @@
 
 ## 실행
 
+**바로 쓰기**: https://earthdonut17.github.io/hanja-quiz/ (설치 없이 브라우저에서 열려요. 학습 기록은 그 브라우저에만 저장돼요.)
+
 `serve.ps1`을 실행하고 `http://localhost:8792`로 열어요. (`index.html`을 바로 열어도 돼요.)
 
 **바탕화면 바로가기**: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\create-desktop-shortcut.ps1`를 실행하면 바탕화면에 "초등 한자 공부" 바로가기가 만들어져요. 서버 없이 Edge(없으면 Chrome)의 앱 창으로 `index.html`을 열고, 학습 기록은 그 브라우저에 저장돼요. 프로젝트 폴더를 옮기면 이 스크립트를 다시 실행하세요. 아이콘은 `python tools/make-icon.py`로 다시 만들 수 있어요(Pillow 필요).
