@@ -747,6 +747,7 @@ function handleAnswer(question, value, sourceEl) {
   state.answered = true;
 
   const correct = checkAnswer(question, value);
+  A.sound.play(correct ? "correct" : "wrong");
 
   // 한자와 상관없는 생활 예절 문제(word가 없음)는 기록에 넣지 않는다.
   if (!state.reviewMode && question.word) {
@@ -868,6 +869,7 @@ function finishSession() {
       ? " 8급부터 5급까지 모두 마스터했어요! 🎉"
       : ` 이제 ${gradeLabel(newest)} 한자가 함께 나와요.`;
     banner.textContent = `🏅 ${earned.map(gradeLabel).join("·")} 마스터가 되었어요!${tail}`;
+    setTimeout(() => A.sound.play("title"), 350); // 마지막 문제 소리가 끝난 뒤에 울린다
   }
 
   const remaining = computeDueItems().length;
@@ -940,8 +942,22 @@ function renderHelpDetails() {
   });
 }
 
+function renderSoundButton() {
+  const on = A.sound.isEnabled();
+  const btn = el("btn-sound");
+  btn.textContent = on ? "🔊" : "🔇";
+  btn.title = on ? "효과음 끄기" : "효과음 켜기";
+  btn.setAttribute("aria-pressed", String(on));
+}
+
 function init() {
   store.setValidTypes(QUESTION_TYPES);
+  renderSoundButton();
+  el("btn-sound").addEventListener("click", () => {
+    A.sound.setEnabled(!A.sound.isEnabled());
+    renderSoundButton();
+    A.sound.play("correct"); // 켰을 때 어떤 소리인지 들려준다(끌 때는 소리가 나지 않는다)
+  });
   store.migrateSchemaIfNeeded();
   renderHelpDetails();
   renderUserList();

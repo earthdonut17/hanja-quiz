@@ -194,3 +194,6 @@ body { background: linear-gradient(160deg, #f4f1e6 0%, #e3efe9 100%); }
 .title-row:last-child { border-bottom: none; }
 .title-name { font-weight: 800; }
 .title-meta { color: var(--muted); font-weight: 600; font-size: 0.82rem; text-align: right; }
+
+/* 효과음 켜기/끄기 */
+.sound-btn { text-decoration: none; font-size: 1.15rem; padding: 0; line-height: 1; }

@@ -20,6 +20,7 @@
   <header class="app-header">
     <button id="btn-home" class="app-title" title="처음 화면으로">🀄 초등 한자 공부</button>
     <div class="header-links">
+      <button id="btn-sound" class="link-btn sound-btn" title="효과음 켜기/끄기" aria-label="효과음"></button>
       <button id="btn-help" class="link-btn">도움말</button>
       <button id="btn-switch-user" class="link-btn hidden">사용자 변경</button>
     </div>
@@ -208,6 +209,7 @@
         <li><b>자유 연습</b>: 지금 공부하는 범위에서 모든 유형을 무작위로 <span id="help-free-size">10</span>문제 풀어요. 핵심 유형의 결과만 복습 일정에 반영돼요.</li>
         <li><b>한자 목록</b>: 공부하는 한자와 한자어 예시를 한눈에 볼 수 있어요. 문제를 풀기 전에 훑어봐도 좋아요.</li>
         <li><b>오늘 틀린 문제 복습하기</b>: 오늘 틀린 문제만 다시 풀어요. 공부한 직후 한 번 더 보는 연습이라 레벨과 복습 주기에는 영향을 주지 않아요.</li>
+        <li><b>효과음</b>: 정답과 오답을 맞히면 짧은 소리가 나요. 오른쪽 위의 🔊/🔇 버튼으로 끄고 켤 수 있고, 모의고사에서는 풀 때 소리가 나지 않아요.</li>
         <li>문제를 풀다가 그만두고 싶으면 왼쪽 위 <b>"🀄 초등 한자 공부"</b>를 누르세요. 그때까지 푼 문제는 저장돼요.</li>
       </ul>
     </div>
@@ -353,6 +355,7 @@
 <script src="js/mockexam.js"></script>
 <script src="js/planner.js"></script>
 <script src="js/progression.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/main.js"></script>
 </body>
