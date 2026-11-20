@@ -15,9 +15,10 @@ window.HanjaApp = window.HanjaApp || {};
 (function () {
   const A = window.HanjaApp;
 
-  const NEW_PER_DAY = 12; // 하루에 새로 시작하는 문제 수
-  const MIN_NEW_PER_SESSION = 5; // 복습이 많은 날에도 최소한 새로 배우는 수
-  const MAX_SESSION_SIZE = 25; // 한 번에 푸는 최대 문제 수
+  // 하루 학습량: 복습이 없으면 새 문제 20개, 복습이 쌓이면 새 문제 10개 + 복습 20개 = 최대 30문제
+  const NEW_PER_DAY = 20; // 하루에 새로 시작하는 문제 수
+  const MIN_NEW_PER_SESSION = 10; // 복습이 많은 날에도 최소한 새로 배우는 수
+  const MAX_SESSION_SIZE = 30; // 한 번에 푸는 최대 문제 수
 
   const env = (ctx) => ({
     typesFor: ctx.typesFor || A.quiz.typesFor,
