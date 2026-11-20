@@ -19,18 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
------------------------------------------------------------------------------
-Notice (not part of the MIT License)
-
-This license covers the application code and the original content written for
-this project (word examples, definitions, example sentences, quiz questions,
-tools and documentation).
-
-The list of which hanja belongs to which grade, with their representative
-readings (js/hanja.js, js/hanja_g6.js, js/hanja_g5a.js, js/hanja_g5b.js,
-js/hanja_g5c.js), was taken from the Namuwiki article "한자급수자격검정/배정한자"
-and remains under that article's license, CC BY-NC-SA 2.0 KR
-(https://creativecommons.org/licenses/by-nc-sa/2.0/kr/): attribution is
-required, non-commercial use only, and adaptations must use the same terms.
-See README.md for details.
