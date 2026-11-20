@@ -1,0 +1,182 @@
+/* 영단어 앱에서 가져온 style.css 위에 덮어쓰는 한자 앱 전용 스타일.
+   색은 먹빛과 청록(옛 서책 느낌), 한자는 명조(세리프) 계열 글꼴로 크게 보여 준다. */
+:root {
+  --bg: #f4f1e6;
+  --primary: #3f7d6e;
+  --primary-dark: #2f6155;
+  --secondary: #c9884a;
+  --accent: #e8c26a;
+  --text: #2a2d2b;
+  --muted: #7d867f;
+  --hanja-font: "Noto Serif KR", "Noto Serif CJK KR", "Source Han Serif K", "Batang", "BatangChe", "AppleMyungjo", "Songti SC", serif;
+}
+
+body { background: linear-gradient(160deg, #f4f1e6 0%, #e3efe9 100%); }
+
+.big-btn.secondary { background: var(--secondary); box-shadow: 0 4px 0 #a06a33; }
+.emoji-picker span.selected { border-color: var(--primary); background: #e6f1ec; }
+.progress-fill { background: var(--accent); }
+.type-input input:focus, .add-user-form input:focus { outline: none; border-color: var(--primary); }
+
+/* 퀴즈에 나오는 한자 */
+.hanja-font, .quiz-hanja, .option-btn.option-hanja, .quiz-word, .word-mark, .viz-rank-hanja {
+  font-family: var(--hanja-font);
+}
+.quiz-hanja {
+  font-size: calc(6.5rem * var(--fit));
+  font-weight: 700;
+  line-height: 1.1;
+}
+.quiz-hanja-hint { /* 음 쓰기 문제에서 한자 아래에 보여 주는 훈 */
+  font-size: calc(1.05rem * var(--fit));
+  font-weight: 600;
+  color: var(--muted);
+}
+.option-btn.option-hanja {
+  font-size: calc(2.2rem * var(--fit));
+  font-weight: 700;
+  padding: calc(8px * var(--fit)) 8px;
+}
+
+/* 한자어 문제 */
+.quiz-word {
+  font-size: calc(3rem * var(--fit));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+}
+.word-mark { color: var(--secondary); }
+.word-blank {
+  display: inline-block;
+  min-width: 1.2em;
+  border-bottom: 4px solid var(--secondary);
+  line-height: 1;
+  vertical-align: baseline;
+}
+.word-blank.filled { color: #2e7d32; border-bottom-color: transparent; }
+.quiz-reading {
+  font-size: calc(1.1rem * var(--fit));
+  font-weight: 700;
+  color: var(--muted);
+}
+.quiz-reading b { color: var(--text); }
+
+/* 급수 선택 */
+.scope-box {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.06);
+}
+.scope-title { font-weight: 800; font-size: 0.95rem; }
+.scope-sub { font-weight: 600; font-size: 0.78rem; color: var(--muted); }
+.scope-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.scope-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid #ddd;
+  background: #fafafa;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.scope-chip small { font-weight: 600; }
+.scope-chip.on { border-color: var(--primary); background: #e6f1ec; color: var(--primary-dark); }
+.scope-chip.soon { border-style: dashed; cursor: default; opacity: 0.6; }
+
+/* 한자 목록 */
+.hanja-detail {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+  border: 2px solid var(--primary);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.hanja-detail .big { font-family: var(--hanja-font); font-size: 4rem; font-weight: 700; line-height: 1; min-width: 1.1em; text-align: center; }
+.hanja-detail .info { min-width: 0; flex: 1; }
+.hanja-detail .label { font-weight: 800; font-size: 1.15rem; }
+.hanja-detail ul { margin: 6px 0 0; padding-left: 0; list-style: none; font-size: 0.9rem; line-height: 1.5; }
+.hanja-detail li b { font-family: var(--hanja-font); font-size: 1.05rem; }
+.hanja-detail .grade-tag { font-size: 0.72rem; font-weight: 800; color: #fff; background: var(--secondary); border-radius: 10px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.hanja-detail .empty { color: var(--muted); font-weight: 600; align-self: center; }
+
+.hanja-group h3 { margin: 14px 0 8px; font-size: 1.05rem; }
+.hanja-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.hanja-cell {
+  position: relative;
+  background: var(--card);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 8px 2px 6px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.06);
+  font: inherit;
+  color: var(--text);
+}
+.hanja-cell.selected { border-color: var(--primary); }
+.hanja-cell .h { display: block; font-family: var(--hanja-font); font-size: 1.9rem; font-weight: 700; line-height: 1.15; }
+.hanja-cell .l { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 700; word-break: keep-all; }
+.hanja-cell .dot { position: absolute; top: 2px; right: 4px; font-size: 0.6rem; }
+
+.viz-rank-hanja { font-size: 1.5rem; }
+
+/* ---------- 기출 양식 문제 ---------- */
+.big-btn.exam { background: #6b5b95; box-shadow: 0 4px 0 #4e4175; }
+
+.quiz-type-label { line-height: 1.35; max-width: 100%; text-align: center; word-break: keep-all; font-size: calc(0.85rem * var(--fit)); }
+.quiz-hanja.small { font-size: calc(2.6rem * var(--fit)); letter-spacing: 0.04em; }
+.quiz-prompt.small { font-size: calc(1.25rem * var(--fit)); word-break: keep-all; }
+.quiz-sentence-meaning { word-break: keep-all; }
+
+.quiz-emoji { font-size: calc(6rem * var(--fit)); line-height: 1.1; }
+.quiz-count { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(4px * var(--fit)); max-width: 15rem; align-self: center; font-size: calc(2.2rem * var(--fit)); line-height: 1.1; }
+
+.quiz-sentence-h { font-size: calc(1.35rem * var(--fit)); font-weight: 700; line-height: 1.9; word-break: keep-all; text-align: left; }
+.quiz-sentence-h u { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.22em; }
+.quiz-sentence-h .sent-hanja { font-family: var(--hanja-font); font-size: 1.35em; font-weight: 700; }
+.quiz-sentence-h .word-mark { color: var(--secondary); }
+
+.quiz-blanks { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(10px * var(--fit)) calc(18px * var(--fit)); font-family: var(--hanja-font); font-size: calc(2.2rem * var(--fit)); font-weight: 700; }
+.quiz-blanks .blank-item { white-space: nowrap; }
+.quiz-blanks .word-blank { min-width: 1em; }
+
+.option-btn.option-word { font-family: var(--hanja-font); font-size: calc(1.8rem * var(--fit)); padding: calc(10px * var(--fit)) 8px; }
+.options-grid.one-col { grid-template-columns: 1fr; }
+.option-btn.option-long { text-align: left; font-size: calc(0.98rem * var(--fit)); padding: calc(10px * var(--fit)) 12px; word-break: keep-all; font-weight: 600; }
+.option-btn .opt-no { color: var(--muted); font-weight: 800; margin-right: 0.4em; font-family: inherit; }
+.option-btn.option-hanja .opt-no, .option-btn.option-word .opt-no { font-size: 0.55em; vertical-align: middle; }
+.option-btn.picked { border-color: var(--primary); background: #e6f1ec; color: var(--primary-dark); }
+.option-btn u { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+
+.quiz-feedback { height: 4.6rem; }
+
+/* 모의고사 */
+.quiz-topbar .exam-badge { font-size: 0.75rem; font-weight: 800; color: #fff; background: #6b5b95; border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+.mock-list { display: flex; flex-direction: column; gap: 10px; }
+.mock-card { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; background: var(--card); border: 2px solid transparent; border-radius: 16px; padding: 12px 14px; box-shadow: 0 3px 0 rgba(0,0,0,0.06); cursor: pointer; font: inherit; color: var(--text); }
+.mock-card:active { transform: scale(0.98); }
+.mock-card .g { font-size: 1.5rem; font-weight: 800; color: #6b5b95; min-width: 3.4em; }
+.mock-card .info { flex: 1; min-width: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+.mock-card .info b { color: var(--text); font-size: 0.95rem; }
+.mock-card .best { font-weight: 800; color: var(--primary-dark); font-size: 0.82rem; white-space: nowrap; }
+
+.result-sub { margin: 0; text-align: center; font-weight: 700; color: var(--muted); }
+.result-score { font-size: 3rem; font-weight: 800; text-align: center; color: #6b5b95; line-height: 1.1; }
+.result-wrong-item.exam { flex-direction: column; gap: 4px; align-items: stretch; font-size: 0.9rem; }
+.result-wrong-item.exam .q-label { font-weight: 800; color: var(--primary-dark); }
+.result-wrong-item.exam .q-line { font-weight: 600; color: var(--muted); word-break: keep-all; }
+.result-wrong-item.exam .q-line b { color: var(--text); }
+.result-wrong-list { max-height: 360px; }
+
+/* 한자 목록 */
+.hanja-detail .book-tag { display: inline-block; font-size: 0.72rem; font-weight: 700; color: #1c5cab; background: #eef4fc; border-radius: 10px; padding: 1px 8px; margin: 4px 4px 0 0; }
+.hanja-cell .book-dot { position: absolute; left: 4px; top: 2px; font-size: 0.6rem; }
+.hanja-note { margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); }

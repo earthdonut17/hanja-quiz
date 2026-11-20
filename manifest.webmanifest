@@ -1,0 +1,12 @@
+{
+  "name": "초등 한자 공부",
+  "short_name": "한자 공부",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#f4f1e6",
+  "theme_color": "#3f7d6e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

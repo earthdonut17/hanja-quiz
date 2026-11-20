@@ -1,0 +1,7 @@
+# 저작권이 있는 자료(기출문제, 교재 PDF)는 올리지 않는다
+기출문제/
+*.pdf
+
+# 로컬 설정
+.claude/settings.local.json
+node_modules/
