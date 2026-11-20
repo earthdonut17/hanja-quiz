@@ -6,6 +6,8 @@
 
 `serve.ps1`을 실행하고 `http://localhost:8792`로 열어요. (`index.html`을 바로 열어도 돼요.)
 
+**바탕화면 바로가기**: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\create-desktop-shortcut.ps1`를 실행하면 바탕화면에 "초등 한자 공부" 바로가기가 만들어져요. 서버 없이 Edge(없으면 Chrome)의 앱 창으로 `index.html`을 열고, 학습 기록은 그 브라우저에 저장돼요. 프로젝트 폴더를 옮기면 이 스크립트를 다시 실행하세요. 아이콘은 `python tools/make-icon.py`로 다시 만들 수 있어요(Pillow 필요).
+
 ## 들어 있는 것
 
 - **급수 한자 250자**: 8급 30 · 7급 20 · 6급 20 · 준5급 30 · 5급 150 (훈음·한자어·예문·총획)
@@ -29,6 +31,7 @@
 | `js/planner.js` | 오늘의 학습에 어떤 문제를 낼지 정하는 규칙 (화면과 시뮬레이터가 함께 씀) |
 | `js/progression.js` | 급수 마스터 호칭과 단계별 해금 규칙 (8급 → 7급 → 6급 → 준5급 → 5급) |
 | `js/srs.js`, `js/storage.js`, `js/stats.js`, `js/main.js` | 복습 주기, 저장, 통계, 화면 |
+| `tools/make-icon.py`, `tools/create-desktop-shortcut.ps1` | 앱 아이콘(`icon.ico` 등) 생성, 바탕화면 바로가기 생성 |
 | `tools/simulate-progression.js` | 급수 단계별 해금으로 5급까지 걸리는 기간 시뮬레이션 (`docs/progression-simulation.md`) |
 
 ## 검증
