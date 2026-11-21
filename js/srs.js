@@ -84,5 +84,5 @@ window.HanjaApp = window.HanjaApp || {};
     return card.level >= MAX_LEVEL;
   }
 
-  window.HanjaApp.srs = { INTERVAL_DAYS, MAX_LEVEL, newCard, recordAnswer, isDue, dueDate, isWeekend, isMastered };
+  window.HanjaApp.srs = { INTERVAL_DAYS, MAX_LEVEL, newCard, recordAnswer, isDue, dueDate, isWeekend, isMastered, addDays };
 })();

@@ -41,6 +41,7 @@ let state = {
   screen: "users",
   screenBeforeHelp: "users",
   mode: "study", // "study" | "exam"(모의고사)
+  moreMode: null, // 결과 화면의 "더 하기" 버튼이 여는 학습: "review"(남은 복습) | "advance"(다음 학습일 미리 하기) | null
   reviewMode: false,
   index: 0,
   answered: false,
@@ -258,6 +259,7 @@ const planCtx = () => ({
 });
 const computeDueItems = () => A.planner.computeDueItems(planCtx());
 const planStudySession = () => A.planner.planStudySession(planCtx());
+const planAdvanceSession = () => A.planner.planAdvanceSession(planCtx());
 const pickReviews = (dueItems, newCount) => A.planner.pickReviews(planCtx(), dueItems, newCount);
 
 // "완전히 외운 한자": 그 한자에 나오는 핵심 유형이 모두 최고 레벨
@@ -267,6 +269,15 @@ function isWordMastered(wordId) {
   if (!rec || !word) return false;
   const core = CORE_TYPES.filter((t) => hasType(word, t));
   return core.every((t) => rec[t] && isMastered(rec[t]));
+}
+
+const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"];
+
+// 미리 할 학습일의 이름: 내일이면 "내일", 아니면 "11월 23일(월)"
+function studyDayLabel(day) {
+  if (day === A.srs.addDays(store.todayStr(), 1)) return "내일";
+  const [y, m, d] = day.split("-").map(Number);
+  return `${m}월 ${d}일(${WEEKDAY_KO[new Date(y, m - 1, d).getDay()]})`;
 }
 
 function renderDashboard() {
@@ -288,14 +299,22 @@ function renderDashboard() {
   el("stat-streak").textContent = `${state.stats.streak || 0}🔥`;
 
   const nothingToStudy = due === 0 && newAvail === 0;
+  // 오늘 할 것이 없으면 다음 학습일의 복습과 새 문제를 당겨와서 미리 할 수 있다
+  const advance = nothingToStudy ? planAdvanceSession() : null;
+  const canAdvance = !!advance && advance.reviews.length + advance.newItems.length > 0;
   const emptyMsg = el("dash-empty-msg");
   emptyMsg.classList.toggle("hidden", !nothingToStudy);
-  emptyMsg.textContent = state.stats.newWordsToday > 0
-    ? "오늘 학습을 모두 마쳤어요! 내일 또 만나요. 자유 연습과 모의고사는 언제든 할 수 있어요."
+  const opener = state.stats.newWordsToday > 0
+    ? "오늘 학습을 모두 마쳤어요!"
     : isWeekend(store.todayStr())
-    ? "주말에는 밀린 복습이 있을 때만 학습할 수 있어요. 오늘은 푹 쉬거나 자유 연습을 해 볼까요?"
-    : "오늘 복습할 문제가 없어요! 자유 연습으로 더 배워볼까요?";
-  el("btn-start-study").disabled = nothingToStudy;
+    ? "오늘은 쉬는 날이에요."
+    : "오늘 복습할 문제가 없어요!";
+  emptyMsg.textContent = canAdvance
+    ? `${opener} 원하면 ${studyDayLabel(advance.day)} 학습을 미리 할 수 있어요 (복습 ${advance.reviews.length}개 + 새 문제 ${advance.newItems.length}개).`
+    : `${opener} 자유 연습과 모의고사는 언제든 할 수 있어요.`;
+  const startBtn = el("btn-start-study");
+  startBtn.disabled = nothingToStudy && !canAdvance;
+  startBtn.textContent = canAdvance ? `📚 ${studyDayLabel(advance.day)} 학습 미리 하기` : "📚 오늘의 학습 시작";
 
   const backlog = el("dash-backlog-msg");
   backlog.classList.toggle("hidden", due <= reviewToday);
@@ -472,6 +491,18 @@ function buildStudyItems() {
   return shuffle([...plan.reviews, ...newItems]);
 }
 
+// 오늘 할 것을 다 한 뒤 다음 학습일의 복습과 새 문제를 당겨와서 하는 학습.
+// 새 문제는 오늘 낸 새 문제로 세어서, 중간에 그만두면 안 푼 만큼 돌려준다(goHome).
+function buildAdvanceItems() {
+  const plan = planAdvanceSession();
+  const newItems = plan.newItems.map((it) => ({ ...it, isNew: true }));
+  if (newItems.length) {
+    state.stats.newWordsToday += newItems.length;
+    store.saveStats(state.user.id, state.stats);
+  }
+  return shuffle([...plan.reviews, ...newItems]);
+}
+
 function buildFreePracticeItems() {
   return shuffle(state.words)
     .slice(0, FREE_PRACTICE_SIZE)
@@ -496,9 +527,9 @@ function beginSession(items) {
   renderQuestion();
 }
 
-// mode: "study"(오늘의 학습) | "free"(자유 연습) | "review"(남은 복습 더 하기)
+// mode: "study"(오늘의 학습) | "advance"(다음 학습일 미리 하기) | "free"(자유 연습) | "review"(남은 복습 더 하기)
 function startSession(mode) {
-  const builders = { study: buildStudyItems, free: buildFreePracticeItems, review: buildMoreReviewItems };
+  const builders = { study: buildStudyItems, advance: buildAdvanceItems, free: buildFreePracticeItems, review: buildMoreReviewItems };
   const items = builders[mode]();
   if (items.length === 0) return;
 
@@ -872,11 +903,17 @@ function finishSession() {
     setTimeout(() => A.sound.play("title"), 350); // 마지막 문제 소리가 끝난 뒤에 울린다
   }
 
+  // 이어서 할 것: 오늘 복습이 남았으면 "남은 복습 더 하기", 없으면 "다음 학습일 미리 하기"
   const remaining = computeDueItems().length;
+  const advance = remaining === 0 && !state.reviewMode ? planAdvanceSession() : null;
+  const canAdvance = !!advance && advance.reviews.length + advance.newItems.length > 0;
+  state.moreMode = remaining > 0 ? "review" : canAdvance ? "advance" : null;
   const moreBtn = el("btn-more-review");
-  moreBtn.classList.toggle("hidden", remaining === 0);
+  moreBtn.classList.toggle("hidden", !state.moreMode);
   moreBtn.textContent =
-    remaining > MAX_SESSION_SIZE
+    state.moreMode === "advance"
+      ? `📚 ${studyDayLabel(advance.day)} 학습 미리 하기 (복습 ${advance.reviews.length}개 + 새 문제 ${advance.newItems.length}개)`
+      : remaining > MAX_SESSION_SIZE
       ? `📚 복습 ${MAX_SESSION_SIZE}개 더 하기 (남은 복습 ${remaining}개)`
       : `📚 남은 복습 ${remaining}개 더 하기`;
 
@@ -1014,9 +1051,13 @@ function init() {
   });
 
   el("btn-toggle-progression").addEventListener("click", toggleProgression);
-  el("btn-start-study").addEventListener("click", () => startSession("study"));
+  el("btn-start-study").addEventListener("click", () => {
+    // 오늘 할 것이 남았으면 오늘의 학습, 없으면 다음 학습일 학습을 미리 한다
+    const plan = planStudySession();
+    startSession(plan.reviews.length + plan.newItems.length > 0 ? "study" : "advance");
+  });
   el("btn-free-practice").addEventListener("click", () => startSession("free"));
-  el("btn-more-review").addEventListener("click", () => startSession("review"));
+  el("btn-more-review").addEventListener("click", () => startSession(state.moreMode || "review"));
   el("btn-next").addEventListener("click", nextQuestion);
 
   el("btn-review-wrong").addEventListener("click", startWrongReview);

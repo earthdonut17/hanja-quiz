@@ -11,6 +11,7 @@ window.HanjaApp = window.HanjaApp || {};
 //   typesFor?      한자별로 낼 수 있는 유형 (기본: quiz.typesFor)
 //   basicTypes?    처음 보는 한자에게 먼저 내는 유형 (기본: quiz.BASIC_TYPES)
 //   coreFirst?     true면 새 유형을 고를 때 핵심 유형(훈음·한자·독음·한자어 쓰기·문장 한자)을 먼저 낸다
+//   asOf?          이 날짜까지 복습일이 돌아오는 카드를 "복습 대상"으로 본다(기본: 오늘). 다음 학습일 학습을 미리 할 때 쓴다
 //   newPerDay?, minNew?, maxSession?   하루 새 문제 수 / 최소 새 문제 수 / 한 번에 푸는 최대 수 (시뮬레이션용. 기본은 아래 상수)
 (function () {
   const A = window.HanjaApp;
@@ -36,7 +37,10 @@ window.HanjaApp = window.HanjaApp || {};
       if (!rec) return;
       typesFor(w).forEach((type) => {
         const card = rec[type];
-        if (card && A.srs.isDue(card)) items.push({ word: w, type, next: A.srs.dueDate(card), level: card.level });
+        if (!card) return;
+        const day = A.srs.dueDate(card);
+        const due = ctx.asOf ? !day || day <= ctx.asOf : A.srs.isDue(card);
+        if (due) items.push({ word: w, type, next: day, level: card.level });
       });
     });
     return items;
@@ -106,6 +110,21 @@ window.HanjaApp = window.HanjaApp || {};
     return { dueCount: due.length, reviews: due.slice(0, maxSession - newItems.length), newItems };
   }
 
+  // 오늘 이후 처음 오는 학습일(토·일은 건너뛴다). 오늘 학습을 다 한 뒤 "미리 하기"로 당겨올 날이다.
+  function nextStudyDay(today) {
+    let day = A.srs.addDays(today, 1);
+    while (A.srs.isWeekend(day)) day = A.srs.addDays(day, 1);
+    return day;
+  }
+
+  // 오늘 할 것을 모두 마쳤을 때, 다음 학습일에 하게 될 학습을 미리 구성한다:
+  // 그날까지 복습일이 돌아오는 카드(오늘 아직 복습일이 안 된 것 포함)와 그날의 새 문제 몫.
+  // 돌려주는 값은 planStudySession과 같고, day(미리 하는 날짜)가 더해진다.
+  function planAdvanceSession(ctx) {
+    const day = nextStudyDay(ctx.today);
+    return { day, ...planStudySession({ ...ctx, today: day, asOf: day, newWordsToday: 0 }) };
+  }
+
   // 오늘 학습을 마친 뒤 밀린 복습을 더 풀 때처럼 신규 없이 복습만 고를 때
   function pickReviews(ctx, dueItems, newCount) {
     return sortReviews(ctx, dueItems).slice(0, Math.max(0, MAX_SESSION_SIZE - newCount));
@@ -119,6 +138,8 @@ window.HanjaApp = window.HanjaApp || {};
     computeNewCandidates,
     splitNewSlots,
     planStudySession,
+    planAdvanceSession,
+    nextStudyDay,
     pickReviews,
   };
 })();
